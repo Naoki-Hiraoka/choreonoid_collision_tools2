@@ -85,7 +85,7 @@ namespace choreonoid_vclip {
     std::shared_ptr<Vclip::Polyhedron> mesh1 = convertToVClipModel(link1->collisionShape());
     std::shared_ptr<Vclip::Polyhedron> mesh2 = convertToVClipModel(link2->collisionShape());
 
-    if(!mesh1 || mesh2) return false;
+    if(!mesh1 || !mesh2) return false;
 
     return computeDistance(mesh1, link1->p(), link1->R(), mesh2, link2->p(), link2->R(), distance, q1, q2);
   }
