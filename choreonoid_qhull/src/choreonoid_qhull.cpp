@@ -84,7 +84,7 @@ namespace choreonoid_qhull{
 
   void convertAllCollisionToConvexHull(cnoid::BodyPtr& robot){
     for(size_t i=0;i<robot->numLinks();i++){
-      cnoid::SgNode* coldetModel = convertToConvexHull(robot->link(i)->collisionShape());
+      cnoid::SgNodePtr coldetModel = convertToConvexHull(robot->link(i)->collisionShape());
       if(coldetModel){
         robot->link(i)->setCollisionShape(coldetModel);
       }else{
