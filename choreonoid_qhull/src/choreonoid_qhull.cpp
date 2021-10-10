@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <cnoid/SceneDrawables>
 #include <cnoid/MeshExtractor>
 #include <cnoid/EigenUtil>
 

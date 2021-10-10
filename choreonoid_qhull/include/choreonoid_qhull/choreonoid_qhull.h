@@ -1,7 +1,6 @@
 #ifndef CHOREONOID_QHULL_H
 #define CHOREONOID_QHULL_H
 
-#include <cnoid/SceneDrawables>
 #include <cnoid/Body>
 
 namespace choreonoid_qhull{
