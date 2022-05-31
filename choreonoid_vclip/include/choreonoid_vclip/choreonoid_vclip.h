@@ -4,6 +4,7 @@
 #include <memory>
 
 #include <cnoid/Body>
+#include <cnoid/SceneDrawables>
 
 namespace Vclip{
   class Polyhedron;

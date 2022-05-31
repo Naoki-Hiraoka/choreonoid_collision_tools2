@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#include <cnoid/SceneDrawables>
 #include <cnoid/MeshExtractor>
 
 #include <vclipeigen/vclipeigen.h>
