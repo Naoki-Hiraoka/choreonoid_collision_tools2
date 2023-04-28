@@ -37,6 +37,7 @@ namespace choreonoid_vclip {
     const cnoid::Affine3& T = meshExtractor->currentTransform();
 
     cnoid::SgMeshPtr model = new cnoid::SgMesh;
+    model->setName(mesh->name());
 
     const cnoid::SgVertexArray& vertices = *mesh->vertices();
     const int numVertices = vertices.size();
