@@ -9,7 +9,7 @@
 #include <qhulleigen/qhulleigen.h>
 
 namespace choreonoid_qhull{
-  void addMesh(cnoid::SgMeshPtr model, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
+  inline void addMesh(cnoid::SgMeshPtr model, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
     cnoid::SgMeshPtr mesh = meshExtractor->currentMesh();
     const cnoid::Affine3& T = meshExtractor->currentTransform();
 
@@ -32,7 +32,7 @@ namespace choreonoid_qhull{
     }
   }
 
-  cnoid::SgMeshPtr convertToSgMesh (const cnoid::SgNodePtr collisionshape){
+  inline cnoid::SgMeshPtr convertToSgMesh (const cnoid::SgNodePtr collisionshape){
 
     if (!collisionshape) return nullptr;
 
@@ -91,5 +91,33 @@ namespace choreonoid_qhull{
         std::cerr << "[convertCollisionToConvexHull] convex hull " << robot->link(i)->name() << " fail" << std::endl;
       }
     }
+  }
+
+  cnoid::SgNodePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d> vertices_) {
+    // qhull
+    Eigen::MatrixXd vertices(3,vertices_.size());
+    for(size_t i=0;i<vertices_.size();i++){
+      vertices.col(i) = vertices_[i];
+    }
+    Eigen::MatrixXd hull;
+    std::vector<std::vector<int> > faces;
+    if(!qhulleigen::convexhull(vertices,hull,faces)) return nullptr;
+
+    cnoid::SgMeshPtr coldetModel(new cnoid::SgMesh);
+
+    coldetModel->getOrCreateVertices()->resize(hull.cols());
+    coldetModel->setNumTriangles(faces.size());
+
+    for(size_t i=0;i<hull.cols();i++){
+      coldetModel->vertices()->at(i) = hull.col(i).cast<cnoid::Vector3f::Scalar>();
+    }
+
+    for(size_t i=0;i<faces.size();i++){
+      coldetModel->setTriangle(i, faces[i][0], faces[i][1], faces[i][2]);
+    }
+
+    cnoid::SgShapePtr ret(new cnoid::SgShape);
+    ret->setMesh(coldetModel);
+    return ret;
   }
 }
