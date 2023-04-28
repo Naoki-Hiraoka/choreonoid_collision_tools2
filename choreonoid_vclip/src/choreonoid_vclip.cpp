@@ -2,12 +2,14 @@
 
 #include <iostream>
 #include <vector>
+#include <limits>
 #include <cnoid/MeshExtractor>
 
 #include <vclipeigen/vclipeigen.h>
 
 namespace choreonoid_vclip {
-  void addMesh(cnoid::SgMeshPtr model, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
+
+  inline void addMesh(cnoid::SgMeshPtr model, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
     cnoid::SgMeshPtr mesh = meshExtractor->currentMesh();
     const cnoid::Affine3& T = meshExtractor->currentTransform();
 
@@ -30,7 +32,32 @@ namespace choreonoid_vclip {
     }
   }
 
-  cnoid::SgMeshPtr convertToSgMesh (const cnoid::SgNodePtr collisionshape){
+  inline void addMeshes(std::vector<cnoid::SgMeshPtr>& models, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
+    cnoid::SgMeshPtr mesh = meshExtractor->currentMesh();
+    const cnoid::Affine3& T = meshExtractor->currentTransform();
+
+    cnoid::SgMeshPtr model = new cnoid::SgMesh;
+
+    const cnoid::SgVertexArray& vertices = *mesh->vertices();
+    const int numVertices = vertices.size();
+    for(int i=0; i < numVertices; ++i){
+      const cnoid::Vector3 v = T * vertices[i].cast<cnoid::Affine3::Scalar>();
+      model->vertices()->push_back(v.cast<cnoid::Vector3f::Scalar>());
+    }
+
+    const int numTriangles = mesh->numTriangles();
+    for(int i=0; i < numTriangles; ++i){
+      cnoid::SgMesh::TriangleRef tri = mesh->triangle(i);
+      const int v0 = tri[0];
+      const int v1 = tri[1];
+      const int v2 = tri[2];
+      model->addTriangle(v0, v1, v2);
+    }
+
+    models.push_back(model);
+  }
+
+  inline cnoid::SgMeshPtr convertToSgMesh (const cnoid::SgNodePtr collisionshape){
 
     if (!collisionshape) return nullptr;
 
@@ -45,6 +72,23 @@ namespace choreonoid_vclip {
 
     return model;
   }
+
+  inline std::vector<cnoid::SgMeshPtr> convertToSgMeshes (const cnoid::SgNodePtr collisionshape){
+
+    if (!collisionshape) return std::vector<cnoid::SgMeshPtr>();
+
+    std::shared_ptr<cnoid::MeshExtractor> meshExtractor = std::make_shared<cnoid::MeshExtractor>();
+    std::vector<cnoid::SgMeshPtr> models;
+    if(meshExtractor->extract(collisionshape, [&]() { addMeshes(models,meshExtractor); })){
+      //model->setName(collisionshape->name());
+    }else{
+      std::cerr << "[convertToSgMeshes] meshExtractor->extract failed " << collisionshape->name() << std::endl;
+      return std::vector<cnoid::SgMeshPtr>();
+    }
+
+    return models;
+  }
+
 
   std::shared_ptr<Vclip::Polyhedron> convertToVClipModel(const cnoid::SgNodePtr collisionshape) {
     if(!collisionshape) return nullptr;
@@ -62,6 +106,28 @@ namespace choreonoid_vclip {
     return vclipeigen::convertToVClipModel(vertices);
   }
 
+  std::vector<std::shared_ptr<Vclip::Polyhedron> > convertToVClipModels(const cnoid::SgNodePtr collisionshape) {
+    if(!collisionshape) return std::vector<std::shared_ptr<Vclip::Polyhedron> >();
+
+    std::vector<cnoid::SgMeshPtr> models = convertToSgMeshes(collisionshape);
+
+    std::vector<std::shared_ptr<Vclip::Polyhedron> > vclipModels;
+
+    for(int m=0;m<models.size();m++){
+      if(!models[m]) continue;;
+      std::vector<cnoid::Vector3> vertices;
+
+      for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
+        vertices.push_back(models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+      }
+
+      std::shared_ptr<Vclip::Polyhedron> vclipModel = vclipeigen::convertToVClipModel(vertices);
+      if(vclipModel) vclipModels.push_back(vclipModel);
+    }
+
+    return vclipModels;
+  }
+
   bool computeDistance(const std::shared_ptr<Vclip::Polyhedron>& mesh1,
                        const Eigen::Vector3d& p1,
                        const Eigen::Matrix3d& R1,
@@ -73,6 +139,47 @@ namespace choreonoid_vclip {
                        Eigen::Vector3d& q2//q1,q2はlocal系. 最近傍点
                        ) {
     return vclipeigen::computeDistance(mesh1, p1, R1, mesh2, p2, R2, distance, q1, q2);
+  }
+
+  bool computeDistance(const std::vector<std::shared_ptr<Vclip::Polyhedron> >& mesh1,
+                       const Eigen::Vector3d& p1,
+                       const Eigen::Matrix3d& R1,
+                       const std::vector<std::shared_ptr<Vclip::Polyhedron> >& mesh2,
+                       const Eigen::Vector3d& p2,
+                       const Eigen::Matrix3d& R2,
+                       double& distance,
+                       Eigen::Vector3d& q1,
+                       Eigen::Vector3d& q2//q1,q2はlocal系. 最近傍点
+                       ) {
+    if(mesh1.size() == 0 || mesh2.size() == 0) return false;
+
+    bool solved = false;
+    double mindistance = std::numeric_limits<double>::max();
+    Eigen::Vector3d minq1;
+    Eigen::Vector3d minq2;
+
+    double tmpdistance;
+    Eigen::Vector3d tmpq1;
+    Eigen::Vector3d tmpq2;
+    for(int i=0;i<mesh1.size();i++){
+      for(int j=0;j<mesh2.size();j++){
+        if(vclipeigen::computeDistance(mesh1[i], p1, R1, mesh2[j], p2, R2, tmpdistance, tmpq1, tmpq2)){
+          solved = true;
+          if(tmpdistance < mindistance){
+            mindistance = tmpdistance;
+            minq1 = tmpq1;
+            minq2 = tmpq2;
+          }
+        }
+      }
+    }
+
+    if(!solved) return false;
+
+    distance = mindistance;
+    q1 = minq1;
+    q2 = minq2;
+    return true;
   }
 
   bool computeDistance(const cnoid::LinkPtr link1,

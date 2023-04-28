@@ -13,12 +13,26 @@ namespace Vclip{
 // meshはconvexである必要がある
 
 namespace choreonoid_vclip {
+  // collisionshape全体で1つのVclip::Polyhedronにする
   std::shared_ptr<Vclip::Polyhedron> convertToVClipModel(const cnoid::SgNodePtr collisionshape);
+
+  // collisionshapeの各meshごとに1つのVclip::Polyhedronにする
+  std::vector<std::shared_ptr<Vclip::Polyhedron> > convertToVClipModels(const cnoid::SgNodePtr collisionshape);
 
   bool computeDistance(const std::shared_ptr<Vclip::Polyhedron>& mesh1,
                        const Eigen::Vector3d& p1,
                        const Eigen::Matrix3d& R1,
                        const std::shared_ptr<Vclip::Polyhedron>& mesh2,
+                       const Eigen::Vector3d& p2,
+                       const Eigen::Matrix3d& R2,
+                       double& distance,
+                       Eigen::Vector3d& q1,
+                       Eigen::Vector3d& q2);//q1,q2はlocal系. 最近傍点
+
+  bool computeDistance(const std::vector<std::shared_ptr<Vclip::Polyhedron> >& mesh1,
+                       const Eigen::Vector3d& p1,
+                       const Eigen::Matrix3d& R1,
+                       const std::vector<std::shared_ptr<Vclip::Polyhedron> >& mesh2,
                        const Eigen::Vector3d& p2,
                        const Eigen::Matrix3d& R2,
                        double& distance,
