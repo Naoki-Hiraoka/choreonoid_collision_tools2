@@ -49,15 +49,8 @@ namespace choreonoid_qhull{
   }
 
   cnoid::SgNodePtr convertToConvexHull(const cnoid::SgNodePtr collisionshape) {
-    cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
-
-    if (!model || model->vertices()->size()==0) return nullptr;
-
     // qhull
-    Eigen::MatrixXd vertices(3,model->vertices()->size());
-    for(size_t i=0;i<model->vertices()->size();i++){
-      vertices.col(i) = model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
-    }
+    Eigen::MatrixXd vertices = meshToEigen(collisionshape);
     Eigen::MatrixXd hull;
     std::vector<std::vector<int> > faces;
     if(!qhulleigen::convexhull(vertices,hull,faces)) return nullptr;
@@ -119,5 +112,17 @@ namespace choreonoid_qhull{
     cnoid::SgShapePtr ret(new cnoid::SgShape);
     ret->setMesh(coldetModel);
     return ret;
+  }
+
+  Eigen::MatrixXd meshToEigen(const cnoid::SgNodePtr collisionshape){
+    cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
+
+    if (!model || model->vertices()->size()==0) return Eigen::MatrixXd(3,0);
+
+    Eigen::MatrixXd vertices(3,model->vertices()->size());
+    for(size_t i=0;i<model->vertices()->size();i++){
+      vertices.col(i) = model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
+    }
+    return vertices;
   }
 }
