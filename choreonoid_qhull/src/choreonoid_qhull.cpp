@@ -114,12 +114,12 @@ namespace choreonoid_qhull{
     return ret;
   }
 
-  Eigen::MatrixXd meshToEigen(const cnoid::SgNodePtr collisionshape){
+  Eigen::Matrix<double,3,Eigen::Dynamic> meshToEigen(const cnoid::SgNodePtr collisionshape){
     cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
 
     if (!model || model->vertices()->size()==0) return Eigen::MatrixXd(3,0);
 
-    Eigen::MatrixXd vertices(3,model->vertices()->size());
+    Eigen::Matrix<double,3,Eigen::Dynamic> vertices(3,model->vertices()->size());
     for(size_t i=0;i<model->vertices()->size();i++){
       vertices.col(i) = model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
     }

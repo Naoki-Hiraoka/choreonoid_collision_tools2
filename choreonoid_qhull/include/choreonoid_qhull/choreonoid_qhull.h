@@ -9,7 +9,7 @@ namespace choreonoid_qhull{
   void convertAllCollisionToConvexHull(cnoid::BodyPtr& robot);
 
   cnoid::SgNodePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d> vertices);
-  Eigen::MatrixXd meshToEigen(const cnoid::SgNodePtr collisionshape);
+  Eigen::Matrix<double,3,Eigen::Dynamic> meshToEigen(const cnoid::SgNodePtr collisionshape);
 }
 
 #endif
