@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include <cnoid/SceneDrawables>
 #include <cnoid/MeshExtractor>
 #include <cnoid/EigenUtil>
 
@@ -86,7 +85,7 @@ namespace choreonoid_qhull{
     }
   }
 
-  cnoid::SgNodePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d> vertices_) {
+  cnoid::SgShapePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d> vertices_) {
     // qhull
     Eigen::MatrixXd vertices(3,vertices_.size());
     for(size_t i=0;i<vertices_.size();i++){
