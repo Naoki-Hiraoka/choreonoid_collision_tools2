@@ -85,12 +85,16 @@ namespace choreonoid_qhull{
     }
   }
 
-  cnoid::SgShapePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d> vertices_) {
-    // qhull
+  cnoid::SgShapePtr generateMeshFromConvexHull(const std::vector<Eigen::Vector3d>& vertices_) {
     Eigen::MatrixXd vertices(3,vertices_.size());
     for(size_t i=0;i<vertices_.size();i++){
       vertices.col(i) = vertices_[i];
     }
+    return generateMeshFromConvexHull(vertices);
+  }
+
+  cnoid::SgShapePtr generateMeshFromConvexHull(const Eigen::VectorXd& vertices) {
+    // qhull
     Eigen::MatrixXd hull;
     std::vector<std::vector<int> > faces;
     if(!qhulleigen::convexhull(vertices,hull,faces)) return nullptr;
