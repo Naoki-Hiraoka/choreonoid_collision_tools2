@@ -153,7 +153,12 @@ namespace choreonoid_vclip {
                        Eigen::Vector3d& q1,
                        Eigen::Vector3d& q2//q1,q2はlocal系. 最近傍点
                        ) {
-    if(mesh1.size() == 0 || mesh2.size() == 0) return false;
+    if(mesh1.size() == 0 || mesh2.size() == 0) {
+      distance = std::numeric_limits<double>::max();
+      q1.setZero();
+      q2.setZero();
+      return true;
+    }
 
     bool solved = false;
     double mindistance = std::numeric_limits<double>::max();
