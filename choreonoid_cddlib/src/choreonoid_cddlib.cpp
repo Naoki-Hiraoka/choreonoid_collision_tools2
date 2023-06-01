@@ -154,7 +154,7 @@ namespace choreonoid_cddlib {
     dus.clear();
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
-      Eigen::MatrixXd vertices(models[m]->vertices()->size(),3);
+      Eigen::MatrixXd vertices(3, models[m]->vertices()->size());
 
       for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
         vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
@@ -198,7 +198,7 @@ namespace choreonoid_cddlib {
     dus.clear();
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
-      Eigen::MatrixXd vertices(models[m]->vertices()->size(),3);
+      Eigen::MatrixXd vertices(3, models[m]->vertices()->size());
 
       for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
         vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
