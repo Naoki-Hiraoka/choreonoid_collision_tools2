@@ -47,14 +47,14 @@ namespace choreonoid_cddlib {
                                 std::vector<Eigen::VectorXd>& dus
                                 );
 
-  bool convertToFACEExpression(const std::vector<Eigen::Vector3d>& V, // [v1, v2, ...]
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& A, // ? x 3. link local
                                Eigen::VectorXd& b,
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                );
-  bool convertToFACEExpression(const std::vector<Eigen::Vector3d>& V, // [v1, v2, ...]
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du

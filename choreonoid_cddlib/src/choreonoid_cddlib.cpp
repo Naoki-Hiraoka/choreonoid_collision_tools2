@@ -105,10 +105,10 @@ namespace choreonoid_cddlib {
 
     if(!model) return false;
 
-    std::vector<cnoid::Vector3> vertices;
+    Eigen::MatrixXd vertices(model->vertices()->size(),3);
 
     for (int i = 0; i < model->vertices()->size(); i ++ ) {
-      vertices.push_back(model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+      vertices.col(i) = model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
     }
 
     return convertToFACEExpression(vertices, A, b, C, dl, du);
@@ -126,10 +126,10 @@ namespace choreonoid_cddlib {
 
     if(!model) return false;
 
-    std::vector<cnoid::Vector3> vertices;
+    Eigen::MatrixXd vertices(model->vertices()->size(),3);
 
     for (int i = 0; i < model->vertices()->size(); i ++ ) {
-      vertices.push_back(model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+      vertices.col(i) = model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
     }
 
     return convertToFACEExpression(vertices, C, dl, du);
@@ -154,10 +154,10 @@ namespace choreonoid_cddlib {
     dus.clear();
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
-      std::vector<cnoid::Vector3> vertices;
+      Eigen::MatrixXd vertices(models[m]->vertices()->size(),3);
 
       for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
-        vertices.push_back(models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+        vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
       }
 
       Eigen::SparseMatrix<double,Eigen::RowMajor> A;
@@ -198,10 +198,10 @@ namespace choreonoid_cddlib {
     dus.clear();
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
-      std::vector<cnoid::Vector3> vertices;
+      Eigen::MatrixXd vertices(models[m]->vertices()->size(),3);
 
       for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
-        vertices.push_back(models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+        vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
       }
 
       Eigen::SparseMatrix<double,Eigen::RowMajor> C;
@@ -221,15 +221,17 @@ namespace choreonoid_cddlib {
     return true;
   }
 
-  bool convertToFACEExpression(const std::vector<Eigen::Vector3d>& V, // [v1, v2, ...]
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& A, // ? x 3. link local
                                Eigen::VectorXd& b,
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    Eigen::VectorXd V_(V.size(),3);
-    for(int i=0;i<V.size();i++) V_.col(i) = V[i];
+    if(V.rows() != 3) {
+      std::cerr << __FUNCTION__ << "dimention mismatch" << std::endl;
+      return false;
+    }
 
     const Eigen::MatrixXd R_nonneg(3,0);
     const Eigen::MatrixXd R_free(3,0);
@@ -245,7 +247,7 @@ namespace choreonoid_cddlib {
         A_eq   x + b_eq    = 0
         A_ineq x + b_ineq >= 0
     */
-    if(!cddeigen::VtoH(V_,
+    if(!cddeigen::VtoH(V,
                        R_nonneg,
                        R_free,
                        A_eq,
@@ -287,13 +289,15 @@ namespace choreonoid_cddlib {
     return true;
   }
 
-  bool convertToFACEExpression(const std::vector<Eigen::Vector3d>& V, // [v1, v2, ...]
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    Eigen::VectorXd V_(V.size(),3);
-    for(int i=0;i<V.size();i++) V_.col(i) = V[i];
+    if(V.rows() != 3) {
+      std::cerr << __FUNCTION__ << "dimention mismatch" << std::endl;
+      return false;
+    }
 
     const Eigen::MatrixXd R_nonneg(3,0);
     const Eigen::MatrixXd R_free(3,0);
@@ -309,7 +313,7 @@ namespace choreonoid_cddlib {
         A_eq   x + b_eq    = 0
         A_ineq x + b_ineq >= 0
     */
-    if(!cddeigen::VtoH(V_,
+    if(!cddeigen::VtoH(V,
                        R_nonneg,
                        R_free,
                        A_eq,
