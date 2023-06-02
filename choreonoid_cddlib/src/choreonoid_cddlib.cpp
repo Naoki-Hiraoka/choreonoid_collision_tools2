@@ -261,14 +261,15 @@ namespace choreonoid_cddlib {
         A_eq   x + b_eq    = 0
         A_ineq x + b_ineq >= 0
     */
-    if(!cddeigen::VtoH(V,
-                       R_nonneg,
-                       R_free,
-                       A_eq,
-                       b_eq,
-                       A_ineq,
-                       b_ineq
-                       )) return false;
+    // gmpを使わないと不正確. 3次元であればgmpでもそこまで遅くない
+    if(!cddeigen::VtoHgmp(V,
+                          R_nonneg,
+                          R_free,
+                          A_eq,
+                          b_eq,
+                          A_ineq,
+                          b_ineq
+                          )) return false;
 
     // 各行のnormを1にする
     for(int i=0;i<A_eq.rows();i++){
@@ -327,14 +328,15 @@ namespace choreonoid_cddlib {
         A_eq   x + b_eq    = 0
         A_ineq x + b_ineq >= 0
     */
-    if(!cddeigen::VtoH(V,
-                       R_nonneg,
-                       R_free,
-                       A_eq,
-                       b_eq,
-                       A_ineq,
-                       b_ineq
-                       )) return false;
+    // gmpを使わないと不正確. 3次元であればgmpでもそこまで遅くない
+    if(!cddeigen::VtoHgmp(V,
+                          R_nonneg,
+                          R_free,
+                          A_eq,
+                          b_eq,
+                          A_ineq,
+                          b_ineq
+                          )) return false;
 
     // 各行のnormを1にする
     for(int i=0;i<A_eq.rows();i++){
