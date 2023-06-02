@@ -99,7 +99,14 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    if(!collisionshape) return false;
+    if(!collisionshape) {
+      A.resize(0,3);
+      b.resize(0);
+      C = Eigen::SparseMatrix<double,Eigen::RowMajor>(1,3);
+      dl = Eigen::VectorXd::Ones(1);
+      du = -Eigen::VectorXd::Ones(1);
+      return false;
+    }
 
     cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
 
@@ -120,7 +127,12 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    if(!collisionshape) return false;
+    if(!collisionshape) {
+      C = Eigen::SparseMatrix<double,Eigen::RowMajor>(1,3);
+      dl = Eigen::VectorXd::Ones(1);
+      du = -Eigen::VectorXd::Ones(1);
+      return false;
+    }
 
     cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
 
@@ -143,15 +155,16 @@ namespace choreonoid_cddlib {
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 ){
-    if(!collisionshape) return false;
-
-    std::vector<cnoid::SgMeshPtr> models = convertToSgMeshes(collisionshape);
-
     As.clear();
     bs.clear();
     Cs.clear();
     dls.clear();
     dus.clear();
+
+    if(!collisionshape) return false;
+
+    std::vector<cnoid::SgMeshPtr> models = convertToSgMeshes(collisionshape);
+
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
       Eigen::MatrixXd vertices(3, models[m]->vertices()->size());
@@ -189,13 +202,14 @@ namespace choreonoid_cddlib {
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 ){
+    Cs.clear();
+    dls.clear();
+    dus.clear();
+
     if(!collisionshape) return false;
 
     std::vector<cnoid::SgMeshPtr> models = convertToSgMeshes(collisionshape);
 
-    Cs.clear();
-    dls.clear();
-    dus.clear();
     for(int m=0;m<models.size();m++){
       if(!models[m]) continue;
       Eigen::MatrixXd vertices(3, models[m]->vertices()->size());
@@ -228,7 +242,7 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    if(V.rows() != 3) {
+    if(V.cols() != 0 && V.rows() != 3) {
       std::cerr << __FUNCTION__ << "dimention mismatch" << std::endl;
       return false;
     }
@@ -294,7 +308,7 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
-    if(V.rows() != 3) {
+    if(V.cols() != 0 && V.rows() != 3) {
       std::cerr << __FUNCTION__ << "dimention mismatch" << std::endl;
       return false;
     }
