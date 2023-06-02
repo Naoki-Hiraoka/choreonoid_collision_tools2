@@ -40,7 +40,7 @@ namespace choreonoid_qhull{
     if(meshExtractor->extract(collisionshape, [&]() { addMesh(model,meshExtractor); })){
       model->setName(collisionshape->name());
     }else{
-      std::cerr << "[convertToSgMesh] meshExtractor->extract failed " << collisionshape->name() << std::endl;
+      std::cerr << __PRETTY_FUNCTION__ << " meshExtractor->extract failed " << collisionshape->name() << std::endl;
       return nullptr;
     }
 
@@ -62,7 +62,7 @@ namespace choreonoid_qhull{
       if(coldetModel){
         robot->link(i)->setCollisionShape(coldetModel);
       }else{
-        std::cerr << "[convertCollisionToConvexHull] convex hull " << robot->link(i)->name() << " fail" << std::endl;
+        std::cerr << __PRETTY_FUNCTION__ << " convex hull " << robot->link(i)->name() << " fail" << std::endl;
       }
     }
   }

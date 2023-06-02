@@ -68,7 +68,7 @@ namespace choreonoid_vclip {
     if(meshExtractor->extract(collisionshape, [&]() { addMesh(model,meshExtractor); })){
       model->setName(collisionshape->name());
     }else{
-      std::cerr << "[convertToSgMesh] meshExtractor->extract failed " << collisionshape->name() << std::endl;
+      std::cerr << __PRETTY_FUNCTION__ << " meshExtractor->extract failed " << collisionshape->name() << std::endl;
       return nullptr;
     }
 
@@ -84,7 +84,7 @@ namespace choreonoid_vclip {
     if(meshExtractor->extract(collisionshape, [&]() { addMeshes(models,meshExtractor); })){
       //model->setName(collisionshape->name());
     }else{
-      std::cerr << "[convertToSgMeshes] meshExtractor->extract failed " << collisionshape->name() << std::endl;
+      std::cerr << __PRETTY_FUNCTION__ << " meshExtractor->extract failed " << collisionshape->name() << std::endl;
       return std::vector<cnoid::SgMeshPtr>();
     }
 
