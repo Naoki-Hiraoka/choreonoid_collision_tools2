@@ -12,7 +12,7 @@ namespace choreonoid_qhull{
     cnoid::SgMeshPtr mesh = meshExtractor->currentMesh();
     const cnoid::Affine3& T = meshExtractor->currentTransform();
 
-    const int vertexIndexTop = model->getOrCreateVertices()->size();
+    const int vertexIndexTop = model->vertices()->size();
 
     const cnoid::SgVertexArray& vertices = *mesh->vertices();
     const int numVertices = vertices.size();
@@ -36,13 +36,12 @@ namespace choreonoid_qhull{
     if (!collisionshape) return nullptr;
 
     std::shared_ptr<cnoid::MeshExtractor> meshExtractor = std::make_shared<cnoid::MeshExtractor>();
-    cnoid::SgMeshPtr model = new cnoid::SgMesh;
+    cnoid::SgMeshPtr model = new cnoid::SgMesh; model->getOrCreateVertices();
     if(meshExtractor->extract(collisionshape, [&]() { addMesh(model,meshExtractor); })){
-      model->setName(collisionshape->name());
     }else{
-      std::cerr << __PRETTY_FUNCTION__ << " meshExtractor->extract failed " << collisionshape->name() << std::endl;
-      return nullptr;
+      // mesh not found
     }
+    model->setName(collisionshape->name());
 
     return model;
   }
@@ -52,7 +51,7 @@ namespace choreonoid_qhull{
     // qhull
     Eigen::MatrixXd vertices = meshToEigen(collisionshape);
     cnoid::SgShapePtr ret = generateMeshFromConvexHull(vertices);
-    ret->setName(collisionshape->name());
+    if(ret) ret->setName(collisionshape->name());
     return ret;
   }
 
