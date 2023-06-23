@@ -5,7 +5,8 @@ add_compile_options(-std=c++11)
 set(CMAKE_BUILD_TYPE Release)
 
 find_package(catkin REQUIRED COMPONENTS
-  bulleteigen)
+  bulleteigen
+  choreonoid_qhull)
 find_package(choreonoid REQUIRED)
 
 catkin_package(

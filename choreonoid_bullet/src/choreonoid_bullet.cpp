@@ -6,6 +6,7 @@
 #include <cnoid/MeshExtractor>
 
 #include <bulleteigen/bulleteigen.h>
+#include <choreonoid_qhull/choreonoid_qhull.h>
 
 namespace choreonoid_bullet {
 
@@ -95,7 +96,7 @@ namespace choreonoid_bullet {
   std::shared_ptr<btConvexShape> convertToBulletModel(const cnoid::SgNodePtr collisionshape) {
     if(!collisionshape) return nullptr;
 
-    cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
+    cnoid::SgMeshPtr model = convertToSgMesh(choreonoid_qhull::convertToConvexHull(collisionshape));
 
     if(!model) return nullptr;
 
@@ -116,11 +117,16 @@ namespace choreonoid_bullet {
     std::vector<std::shared_ptr<btConvexShape> > bulletModels;
 
     for(int m=0;m<models.size();m++){
-      if(!models[m]) continue;;
+      if(!models[m]) continue;
+
+      cnoid::SgShapePtr tmpShape = new cnoid::SgShape();
+      tmpShape->setMesh(models[m]);
+      cnoid::SgMeshPtr model = convertToSgMesh(choreonoid_qhull::convertToConvexHull(tmpShape));
+
       std::vector<cnoid::Vector3> vertices;
 
-      for (int i = 0; i < models[m]->vertices()->size(); i ++ ) {
-        vertices.push_back(models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
+      for (int i = 0; i < model->vertices()->size(); i ++ ) {
+        vertices.push_back(model->vertices()->at(i).cast<Eigen::Vector3d::Scalar>());
       }
 
       std::shared_ptr<btConvexShape> bulletModel = bulleteigen::convertToBulletModel(vertices);
