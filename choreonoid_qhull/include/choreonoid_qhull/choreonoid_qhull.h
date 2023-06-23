@@ -5,6 +5,9 @@
 #include <cnoid/SceneDrawables>
 
 namespace choreonoid_qhull{
+  // 以下の場合はnullptrを返す
+  // - collisionshapeがnullptrである場合
+  // - meshの頂点数が4未満であるなどによってconvex hullの計算に失敗した場合
   cnoid::SgNodePtr convertToConvexHull(const cnoid::SgNodePtr collisionshape);
 
   void convertAllCollisionToConvexHull(cnoid::BodyPtr& robot);
