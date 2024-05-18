@@ -11,5 +11,6 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>choreonoid</depend>
+  <depend>choreonoid_qhull</depend>
   <depend>bulleteigen</depend>
 </package>

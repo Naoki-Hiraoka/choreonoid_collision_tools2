@@ -59,7 +59,18 @@ namespace choreonoid_qhull{
     for(size_t i=0;i<robot->numLinks();i++){
       cnoid::SgNodePtr coldetModel = convertToConvexHull(robot->link(i)->collisionShape());
       if(coldetModel){
-        robot->link(i)->setCollisionShape(coldetModel);
+        std::vector<cnoid::SgNodePtr> shapes;
+        {
+          cnoid::SgGroup* group = robot->link(i)->shape();
+          for(int j=0;j<group->numChildObjects();j++){
+            shapes.emplace_back(group->child(j));
+          }
+        }
+        robot->link(i)->clearShapeNodes();
+        for(int j=0;j<shapes.size();j++){
+          robot->link(i)->addVisualShapeNode(shapes[j]);
+        }
+        robot->link(i)->addCollisionShapeNode(coldetModel);
       }else{
         std::cerr << __PRETTY_FUNCTION__ << " convex hull " << robot->link(i)->name() << " fail" << std::endl;
       }
