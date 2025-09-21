@@ -24,9 +24,21 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                );
+  bool convertToFACEExpression(const cnoid::SgNodePtr collisionshape,
+                               Eigen::MatrixXd& A, // ? x 3. link local
+                               Eigen::VectorXd& b,
+                               Eigen::MatrixXd& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               );
   // collisionshape全体で1つのConvexShapeにする
   bool convertToFACEExpression(const cnoid::SgNodePtr collisionshape,
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               );
+  bool convertToFACEExpression(const cnoid::SgNodePtr collisionshape,
+                               Eigen::MatrixXd& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                );
@@ -39,10 +51,22 @@ namespace choreonoid_cddlib {
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 );
+  bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
+                                std::vector<Eigen::MatrixXd>& As, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& bs,
+                                std::vector<Eigen::MatrixXd>& Cs, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& dls,
+                                std::vector<Eigen::VectorXd>& dus
+                                );
 
   // collisionshapeの各meshごとに1つのConvexShapeにする
   bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
                                 std::vector<Eigen::SparseMatrix<double,Eigen::RowMajor> >& Cs, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& dls,
+                                std::vector<Eigen::VectorXd>& dus
+                                );
+  bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
+                                std::vector<Eigen::MatrixXd>& Cs, // ? x 3. link local
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 );
@@ -55,7 +79,19 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& du
                                );
   bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
+                               Eigen::MatrixXd& A, // ? x 3. link local
+                               Eigen::VectorXd& b,
+                               Eigen::MatrixXd& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               );
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               );
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
+                               Eigen::MatrixXd& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                );

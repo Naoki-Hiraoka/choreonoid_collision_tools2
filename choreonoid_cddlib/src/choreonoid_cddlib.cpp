@@ -99,10 +99,37 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
+    Eigen::MatrixXd A_, C_;
+    bool result = convertToFACEExpression(collisionshape,
+                                          A_,
+                                          b,
+                                          C_,
+                                          dl,
+                                          du);
+    if(!result) return false;
+    A.resize(A_.rows(),A_.cols());
+    for(int i=0;i<A_.rows();i++){
+      for(int j=0;j<A_.cols();j++) A.coeffRef(i,j) = A_(i,j);
+    }
+    C.resize(C_.rows(),C_.cols());
+    for(int i=0;i<C_.rows();i++){
+      for(int j=0;j<C_.cols();j++) C.coeffRef(i,j) = C_(i,j);
+    }
+    return true;
+  }
+
+  // collisionshape全体で1つのConvexShapeにする
+  bool convertToFACEExpression(const cnoid::SgNodePtr collisionshape,
+                               Eigen::MatrixXd& A, // ? x 3. link local
+                               Eigen::VectorXd& b,
+                               Eigen::MatrixXd& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               ){
     if(!collisionshape) {
       A.resize(0,3);
       b.resize(0);
-      C = Eigen::SparseMatrix<double,Eigen::RowMajor>(1,3);
+      C = Eigen::MatrixXd(1,3);
       dl = Eigen::VectorXd::Ones(1);
       du = -Eigen::VectorXd::Ones(1);
       return false;
@@ -127,8 +154,27 @@ namespace choreonoid_cddlib {
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
+    Eigen::MatrixXd C_;
+    bool result = convertToFACEExpression(collisionshape,
+                                          C_,
+                                          dl,
+                                          du);
+    if(!result) return false;
+    C.resize(C_.rows(),C_.cols());
+    for(int i=0;i<C_.rows();i++){
+      for(int j=0;j<C_.cols();j++) C.coeffRef(i,j) = C_(i,j);
+    }
+    return true;
+  }
+
+  // collisionshape全体で1つのConvexShapeにする
+  bool convertToFACEExpression(const cnoid::SgNodePtr collisionshape,
+                               Eigen::MatrixXd& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               ){
     if(!collisionshape) {
-      C = Eigen::SparseMatrix<double,Eigen::RowMajor>(1,3);
+      C = Eigen::MatrixXd(1,3);
       dl = Eigen::VectorXd::Ones(1);
       du = -Eigen::VectorXd::Ones(1);
       return false;
@@ -155,6 +201,43 @@ namespace choreonoid_cddlib {
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 ){
+    std::vector<Eigen::MatrixXd> As_, Cs_;
+    bool result = convertToFACEExpressions(collisionshape,
+                                           As_,
+                                           bs,
+                                           Cs_,
+                                           dls,
+                                           dus);
+    if(!result) return false;
+    As.resize(As_.size());
+    for(int i=0;i<As_.size();i++){
+      As[i].resize(As_[i].rows(),As_[i].cols());
+      for(int j=0;j<As_[i].rows();j++){
+        for(int k=0;k<As_[i].cols();k++){
+          As[i].coeffRef(j,k) = As_[i](j,k);
+        }
+      }
+    }
+    Cs.resize(Cs_.size());
+    for(int i=0;i<Cs_.size();i++){
+      Cs[i].resize(Cs_[i].rows(),Cs_[i].cols());
+      for(int j=0;j<Cs_[i].rows();j++){
+        for(int k=0;k<Cs_[i].cols();k++){
+          Cs[i].coeffRef(j,k) = Cs_[i](j,k);
+        }
+      }
+    }
+    return true;
+  }
+
+  // collisionshapeの各meshごとに1つのConvexShapeにする
+  bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
+                                std::vector<Eigen::MatrixXd>& As, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& bs,
+                                std::vector<Eigen::MatrixXd>& Cs, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& dls,
+                                std::vector<Eigen::VectorXd>& dus
+                                ){
     As.clear();
     bs.clear();
     Cs.clear();
@@ -173,9 +256,9 @@ namespace choreonoid_cddlib {
         vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
       }
 
-      Eigen::SparseMatrix<double,Eigen::RowMajor> A;
+      Eigen::MatrixXd A;
       Eigen::VectorXd b;
-      Eigen::SparseMatrix<double,Eigen::RowMajor> C;
+      Eigen::MatrixXd C;
       Eigen::VectorXd dl;
       Eigen::VectorXd du;
 
@@ -186,9 +269,9 @@ namespace choreonoid_cddlib {
         dls.push_back(dl);
         dus.push_back(du);
       }else{
-        As.push_back(Eigen::SparseMatrix<double,Eigen::RowMajor>(0,3));
+        As.push_back(Eigen::MatrixXd(0,3));
         bs.push_back(Eigen::VectorXd(0));
-        Cs.push_back(Eigen::SparseMatrix<double,Eigen::RowMajor>(0,3));
+        Cs.push_back(Eigen::MatrixXd(0,3));
         dls.push_back(Eigen::VectorXd(0));
         dus.push_back(Eigen::VectorXd(0));
       }
@@ -199,6 +282,29 @@ namespace choreonoid_cddlib {
   // collisionshapeの各meshごとに1つのConvexShapeにする
   bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
                                 std::vector<Eigen::SparseMatrix<double,Eigen::RowMajor> >& Cs, // ? x 3. link local
+                                std::vector<Eigen::VectorXd>& dls,
+                                std::vector<Eigen::VectorXd>& dus
+                                ){
+    std::vector<Eigen::MatrixXd> Cs_;
+    bool result = convertToFACEExpressions(collisionshape,
+                                           Cs_,
+                                           dls,
+                                           dus);
+    if(!result) return false;
+    Cs.resize(Cs_.size());
+    for(int i=0;i<Cs_.size();i++){
+      Cs[i].resize(Cs_[i].rows(),Cs_[i].cols());
+      for(int j=0;j<Cs_[i].rows();j++){
+        for(int k=0;k<Cs_[i].cols();k++){
+          Cs[i].coeffRef(j,k) = Cs_[i](j,k);
+        }
+      }
+    }
+    return true;
+  }
+
+  bool convertToFACEExpressions(const cnoid::SgNodePtr collisionshape,
+                                std::vector<Eigen::MatrixXd>& Cs, // ? x 3. link local
                                 std::vector<Eigen::VectorXd>& dls,
                                 std::vector<Eigen::VectorXd>& dus
                                 ){
@@ -218,7 +324,7 @@ namespace choreonoid_cddlib {
         vertices.col(i) = models[m]->vertices()->at(i).cast<Eigen::Vector3d::Scalar>();
       }
 
-      Eigen::SparseMatrix<double,Eigen::RowMajor> C;
+      Eigen::MatrixXd C;
       Eigen::VectorXd dl;
       Eigen::VectorXd du;
 
@@ -227,7 +333,7 @@ namespace choreonoid_cddlib {
         dls.push_back(dl);
         dus.push_back(du);
       }else{
-        Cs.push_back(Eigen::SparseMatrix<double,Eigen::RowMajor>(0,3));
+        Cs.push_back(Eigen::MatrixXd(0,3));
         dls.push_back(Eigen::VectorXd(0));
         dus.push_back(Eigen::VectorXd(0));
       }
@@ -239,6 +345,31 @@ namespace choreonoid_cddlib {
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& A, // ? x 3. link local
                                Eigen::VectorXd& b,
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               ){
+    Eigen::MatrixXd A_, C_;
+    bool result = convertToFACEExpression(V,
+                                          A_,
+                                          b,
+                                          C_,
+                                          dl,
+                                          du);
+    if(!result) return false;
+    A.resize(A_.rows(), A_.cols());
+    for(int i=0;i<A_.rows();i++){
+      for(int j=0;j<A_.cols();j++) A.coeffRef(i,j) = A_(i,j);
+    }
+    C.resize(C_.rows(),C_.cols());
+    for(int i=0;i<C_.rows();i++){
+      for(int j=0;j<C_.cols();j++) C.coeffRef(i,j) = C_(i,j);
+    }
+    return true;
+  }
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
+                               Eigen::MatrixXd& A, // ? x 3. link local
+                               Eigen::VectorXd& b,
+                               Eigen::MatrixXd& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
@@ -290,14 +421,14 @@ namespace choreonoid_cddlib {
     A.resize(A_eq.rows(), 3);
     b.resize(b_eq.size());
     for(int i=0;i<A_eq.rows();i++){
-      for(int j=0;j<3;j++) A.coeffRef(i,j) = A_eq(i,j);
+      for(int j=0;j<3;j++) A(i,j) = A_eq(i,j);
       b[i] = -b_eq(i);
     }
     C.resize(A_ineq.rows(),3);
     dl.resize(A_ineq.rows());
     du.resize(A_ineq.rows());
     for(int i=0;i<A_ineq.rows();i++){
-      for(int j=0;j<3;j++) C.coeffRef(i,j) = A_ineq(i,j);
+      for(int j=0;j<3;j++) C(i,j) = A_ineq(i,j);
       dl[i] = -b_ineq(i);
       du[i] = 1e10;
     }
@@ -306,6 +437,23 @@ namespace choreonoid_cddlib {
 
   bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
                                Eigen::SparseMatrix<double,Eigen::RowMajor>& C, // ? x 3. link local
+                               Eigen::VectorXd& dl,
+                               Eigen::VectorXd& du
+                               ){
+    Eigen::MatrixXd C_;
+    bool result = convertToFACEExpression(V,
+                                          C_,
+                                          dl,
+                                          du);
+    if(!result) return false;
+    C.resize(C_.rows(),C_.cols());
+    for(int i=0;i<C_.rows();i++){
+      for(int j=0;j<C_.cols();j++) C.coeffRef(i,j) = C_(i,j);
+    }
+    return true;
+  }
+  bool convertToFACEExpression(const Eigen::MatrixXd& V, // [v1, v2, ...]
+                               Eigen::MatrixXd& C, // ? x 3. link local
                                Eigen::VectorXd& dl,
                                Eigen::VectorXd& du
                                ){
@@ -358,12 +506,12 @@ namespace choreonoid_cddlib {
     dl.resize(A_eq.rows()+A_ineq.rows());
     du.resize(A_eq.rows()+A_ineq.rows());
     for(int i=0;i<A_eq.rows();i++){
-      for(int j=0;j<3;j++) C.coeffRef(i,j) = A_eq(i,j);
+      for(int j=0;j<3;j++) C(i,j) = A_eq(i,j);
       dl[i] = -b_eq(i);
       du[i] = -b_eq(i);
     }
     for(int i=0;i<A_ineq.rows();i++){
-      for(int j=0;j<3;j++) C.coeffRef(A_eq.rows()+i,j) = A_ineq(i,j);
+      for(int j=0;j<3;j++) C(A_eq.rows()+i,j) = A_ineq(i,j);
       dl[A_eq.rows()+i] = -b_ineq(i);
       du[A_eq.rows()+i] = 1e10;
     }
