@@ -3,6 +3,7 @@
 
 #include <cnoid/Body>
 #include <cnoid/SceneDrawables>
+#include <cnoid/RangeCamera>
 #include <voxblox/mesh/mesh.h>
 #include <voxblox/integrator/tsdf_integrator.h>
 
@@ -14,6 +15,10 @@ namespace choreonoid_voxblox {
                     double ray = 0.1, // input
                     double resolution = 0.01, // input
                     cnoid::Isometry3 mapOrigin = cnoid::Isometry3::Identity() // input
+                    );
+  bool insertToTsdf(const cnoid::RangeCameraPtr camera, // input
+                    std::shared_ptr<voxblox::TsdfIntegratorBase> tsdfIntegrator, // in out
+                    cnoid::Isometry3 mapOrigin // input
                     );
 };
 

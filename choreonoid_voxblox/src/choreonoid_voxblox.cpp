@@ -137,11 +137,48 @@ namespace choreonoid_voxblox {
 
           voxblox::Transformation trans(Eigen::Quaterniond(R_local).cast<float>(), origin_local.cast<float>()); // map frame
           voxblox::Pointcloud pcl{Eigen::Vector3f(0.0,0.0,ray)};
-          voxblox::Colors color{voxblox::Color(0.5,0.5,0.5)};
+          voxblox::Colors color{voxblox::Color(122,122,122)};
           tsdfIntegrator->integratePointCloud(trans, pcl, color);
         }
       }
     }
+
+    // esdfI2ntegrator->addNewRobotPosition(voxblox::Point(0.0, 0.0, 0.0)); // clearする.
+    // esdfIntegrator->updateFromTsdfLayer(true);
+    // meshIntegrator->generateMesh(true, true);
+
+    return true;
+  }
+
+  bool insertToTsdf(const cnoid::RangeCameraPtr camera, // input
+                    std::shared_ptr<voxblox::TsdfIntegratorBase> tsdfIntegrator, // in out
+                    cnoid::Isometry3 mapOrigin // input
+                    ){
+    const cnoid::Isometry3 mapOriginInv = mapOrigin.inverse(); // world frame
+    const cnoid::Isometry3 cameraPose = mapOriginInv * camera->link()->T() * camera->T_local(); // map frame
+
+    const std::vector<cnoid::Vector3f>& points = camera->constPoints(); // camera frame
+    const unsigned char* pixels = camera->constImage().pixels();
+
+    voxblox::Transformation trans(Eigen::Quaterniond(cameraPose.linear()).cast<float>(), cameraPose.translation().cast<float>()); // map frame
+    voxblox::Pointcloud pcl;
+    voxblox::Colors color;
+
+    pcl.reserve(points.size());
+    color.reserve(points.size());
+    for(int i=0;i<points.size();i++){
+      pcl.push_back(points[i]);
+      if (camera->imageType() == cnoid::Camera::COLOR_IMAGE) {
+        unsigned char r = *pixels++;
+        unsigned char g = *pixels++;
+        unsigned char b = *pixels++;
+        color.push_back(voxblox::Color(r,g,b));
+      }else{
+        color.push_back(voxblox::Color(0,0,0));
+      }
+    }
+
+    tsdfIntegrator->integratePointCloud(trans, pcl, color);
 
     // esdfI2ntegrator->addNewRobotPosition(voxblox::Point(0.0, 0.0, 0.0)); // clearする.
     // esdfIntegrator->updateFromTsdfLayer(true);
