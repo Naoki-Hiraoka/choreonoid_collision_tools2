@@ -28,6 +28,8 @@ namespace choreonoid_voxblox {
   public:
     double voxel_size = 0.02;
     double default_distance = 0.5;
+    int resolution = 200;
+    double maxDistance = 1.0;
     double min_x = -1.0;
     double max_x = 1.0;
     double min_y = -1.0;

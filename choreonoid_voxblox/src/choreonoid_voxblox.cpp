@@ -250,10 +250,10 @@ namespace choreonoid_voxblox {
     voxblox::TsdfIntegratorBase::Config tsdf_integrator_config;
     tsdf_integrator_config.voxel_carving_enabled = true;
     tsdf_integrator_config.default_truncation_distance = tsdf_config.tsdf_voxel_size; // 環境にこの値以上めりこんだ位置は未観測扱いになるので注意
-    tsdf_integrator_config.max_weight = 30.0;
+    tsdf_integrator_config.max_weight = 10000.0; // default=10000. 30程度だと面が凸凹になる.
     tsdf_integrator_config.min_ray_length_m = 0.01;
-    // tsdf_integrator_config.use_sparsity_compensation_factor = true; // simulation用限定. 消えないように
-    // tsdf_integrator_config.sparsity_compensation_factor = 5.0;  // simulation用限定
+    tsdf_integrator_config.use_sparsity_compensation_factor = true; // static model限定. 細いものが消えないように
+    tsdf_integrator_config.sparsity_compensation_factor = 1000.0;  // static model限定. 非常に大きな値. 消えなくなるのでdynamic modelで用いるべきではない
     std::shared_ptr<voxblox::FastTsdfIntegrator> tsdfIntegrator = std::make_shared<voxblox::FastTsdfIntegrator>(tsdf_integrator_config, tsdf_layer.get());
 
     voxblox::EsdfIntegrator::Config esdf_integrator_config;
@@ -307,9 +307,9 @@ namespace choreonoid_voxblox {
         camera->setFarClipDistance(200.0);
         camera->setNearClipDistance(0.04);
         camera->setFieldOfView(M_PI / 2);
-        camera->setResolution(200,200);
+        camera->setResolution(param.resolution,param.resolution);
         camera->setImageType(cnoid::Camera::COLOR_IMAGE);
-        camera->setMaxDistance(10.0);
+        camera->setMaxDistance(param.maxDistance);
         camera->setMinDistance(0.04);
         camera->setOrganized(true);
         cameraBody->addDevice(camera, cameraBody->rootLink());
@@ -338,9 +338,9 @@ namespace choreonoid_voxblox {
 
     std::cerr << "generating TSDF" << std::endl;
 
-    for(double x = param.min_x; x <= param.max_x; x+=param.step){
-      for(double y = param.min_y; y <= param.max_y; y+=param.step){
-        for(double z = param.min_z; z <= param.max_z; z+=param.step){
+    for(double z = param.min_z; z <= param.max_z; z+=param.step){ // voxel sizeよりも薄い物体を両側から観測すると、消滅する恐れがある. 一番重要なのは水平面なので、z軸を一番外側のループにする
+      for(double x = param.min_x; x <= param.max_x; x+=param.step){
+        for(double y = param.min_y; y <= param.max_y; y+=param.step){
           cameraBody->rootLink()->p() << x, y, z;
           cameraBody->calcForwardKinematics();
           bool noCollision = true;
@@ -377,7 +377,8 @@ namespace choreonoid_voxblox {
 
     std::cerr << "generating ESDF" << std::endl;
 
-    esdfIntegrator->updateFromTsdfLayer(true);
+    //esdfIntegrator->updateFromTsdfLayer(true);
+    esdfIntegrator->updateFromTsdfLayerBatch();
 
     std::cerr << "generated" << std::endl;
 
