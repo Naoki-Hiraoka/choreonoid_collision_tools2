@@ -39,6 +39,7 @@ namespace choreonoid_voxblox {
       model->colorIndices().push_back(mesh->indices[i+1]);
       model->colorIndices().push_back(mesh->indices[i+2]);
     }
+    model->updateBoundingBox();
     return model;
   }
   cnoid::BodyPtr convertToChoreonoidBody(const std::shared_ptr<voxblox::TsdfMap>& tsdf_map){
