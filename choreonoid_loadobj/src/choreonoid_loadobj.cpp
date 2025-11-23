@@ -49,6 +49,7 @@ namespace choreonoid_loadobj {
         std::cerr << __FUNCTION__ << "file not found: " << fileName << std::endl;
         continue;
       }
+      body->setName(objName);
       {
         YAML::Node node = objInfo["translation"];
         if(node){
