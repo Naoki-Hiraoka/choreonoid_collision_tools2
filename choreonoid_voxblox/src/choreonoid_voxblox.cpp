@@ -1,6 +1,16 @@
 #include <choreonoid_voxblox/choreonoid_voxblox.h>
 #include <cnoid/MeshExtractor>
 #include <cnoid/MeshFilter>
+#include <cnoid/MeshGenerator>
+#include <choreonoid_viewer/choreonoid_viewer.h>
+
+#include <voxblox/core/tsdf_map.h>
+#include <voxblox/core/esdf_map.h>
+#include <voxblox/integrator/tsdf_integrator.h>
+#include <voxblox/integrator/esdf_integrator.h>
+#include <voxblox/mesh/mesh_integrator.h>
+#include <voxblox/utils/planning_utils.h>
+#include <voxblox/io/layer_io.h>
 
 
 namespace choreonoid_voxblox {
@@ -30,6 +40,36 @@ namespace choreonoid_voxblox {
       model->colorIndices().push_back(mesh->indices[i+2]);
     }
     return model;
+  }
+  cnoid::BodyPtr convertToChoreonoidBody(const std::shared_ptr<voxblox::TsdfMap>& tsdf_map){
+
+    std::shared_ptr<voxblox::MeshLayer> mesh_layer = std::make_shared<voxblox::MeshLayer>(tsdf_map->block_size());
+    voxblox::MeshIntegratorConfig mesh_config;
+    std::shared_ptr<voxblox::MeshIntegrator<voxblox::TsdfVoxel> > meshIntegrator = std::make_shared<voxblox::MeshIntegrator<voxblox::TsdfVoxel> >(mesh_config, tsdf_map->getTsdfLayerPtr(), mesh_layer.get());
+    meshIntegrator->generateMesh(true, true);
+
+    cnoid::BodyPtr meshBody = new cnoid::Body();
+    {
+      cnoid::LinkPtr rootLink = new cnoid::Link();
+      {
+        {
+          std::shared_ptr<voxblox::Mesh> mesh = std::make_shared<voxblox::Mesh>();
+          mesh_layer->getMesh(mesh.get());
+          cnoid::SgShapePtr shape = new cnoid::SgShape();
+          shape->setMesh(choreonoid_voxblox::convertToChoreonoidModel(mesh));
+          cnoid::SgMaterialPtr material = new cnoid::SgMaterial();
+          material->setTransparency(0);
+          material->setDiffuseColor(cnoid::Vector3f(0.6, 0.6, 0.6)); // meshのcolorは鏡面反射以外の要素が弱く、暗くなる.
+          shape->setMaterial(material);
+          cnoid::SgPosTransformPtr posTransform = new cnoid::SgPosTransform();
+          posTransform->translation() = cnoid::Vector3(0,0,0);
+          posTransform->addChild(shape);
+          rootLink->addShapeNode(posTransform);
+        }
+        meshBody->setRootLink(rootLink);
+      }
+    }
+    return meshBody;
   }
 
 
@@ -190,5 +230,208 @@ namespace choreonoid_voxblox {
 
     return true;
   }
+
+  bool calcEsdf(const std::vector<cnoid::BodyPtr>& obstacles, // input
+                std::unordered_map<cnoid::LinkPtr, std::shared_ptr<btConvexShape> >& collisionModels, // input
+                std::shared_ptr<voxblox::TsdfMap>& tsdf_map, // output
+                std::shared_ptr<voxblox::EsdfMap>& esdf_map, // output
+                const calcEsdfParam& param
+                ){
+    voxblox::TsdfMap::Config tsdf_config;
+    tsdf_config.tsdf_voxel_size = param.voxel_size;
+    std::shared_ptr<voxblox::Layer<voxblox::TsdfVoxel> > tsdf_layer = std::make_shared<voxblox::Layer<voxblox::TsdfVoxel> >(tsdf_config.tsdf_voxel_size, tsdf_config.tsdf_voxels_per_side);
+    tsdf_map = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
+
+    voxblox::EsdfMap::Config esdf_config;
+    esdf_config.esdf_voxel_size = tsdf_config.tsdf_voxel_size;
+    std::shared_ptr<voxblox::Layer<voxblox::EsdfVoxel> > esdf_layer = std::make_shared<voxblox::Layer<voxblox::EsdfVoxel> >(esdf_config.esdf_voxel_size, esdf_config.esdf_voxels_per_side);
+    esdf_map = std::make_shared<voxblox::EsdfMap>(esdf_layer);
+
+    voxblox::TsdfIntegratorBase::Config tsdf_integrator_config;
+    tsdf_integrator_config.voxel_carving_enabled = true;
+    tsdf_integrator_config.default_truncation_distance = tsdf_config.tsdf_voxel_size; // 環境にこの値以上めりこんだ位置は未観測扱いになるので注意
+    tsdf_integrator_config.max_weight = 30.0;
+    tsdf_integrator_config.min_ray_length_m = 0.01;
+    // tsdf_integrator_config.use_sparsity_compensation_factor = true; // simulation用限定. 消えないように
+    // tsdf_integrator_config.sparsity_compensation_factor = 5.0;  // simulation用限定
+    std::shared_ptr<voxblox::FastTsdfIntegrator> tsdfIntegrator = std::make_shared<voxblox::FastTsdfIntegrator>(tsdf_integrator_config, tsdf_layer.get());
+
+    voxblox::EsdfIntegrator::Config esdf_integrator_config;
+    esdf_integrator_config.min_distance_m = param.voxel_size;
+    esdf_integrator_config.max_distance_m = param.default_distance;
+    esdf_integrator_config.default_distance_m = param.default_distance;
+    esdf_integrator_config.clear_sphere_radius = 1.0;
+    //esdf_integrator_config.full_euclidean_distance = true;
+    std::shared_ptr<voxblox::EsdfIntegrator> esdfIntegrator = std::make_shared<voxblox::EsdfIntegrator>(esdf_integrator_config, tsdf_map->getTsdfLayerPtr(), esdf_layer.get());
+    // esdfIntegrator->addNewRobotPosition(center); // centerを中心としたclear_sphere_radiusの球をobservedかつdefault_distance_mにセットする. esdf_mapはobservedでないvoxelに対して距離を取得しようとすると失敗してfalseを返すが、rayが通っていないvoxelはobservedでないため困る.
+
+    std::vector<cnoid::Matrix3> rotations{cnoid::Matrix3(cnoid::AngleAxisd(0,cnoid::Vector3::UnitZ())),
+                                          cnoid::Matrix3(cnoid::AngleAxisd(M_PI/2,cnoid::Vector3::UnitZ())),
+                                          cnoid::Matrix3(cnoid::AngleAxisd(M_PI,cnoid::Vector3::UnitZ())),
+                                          cnoid::Matrix3(cnoid::AngleAxisd(-M_PI/2,cnoid::Vector3::UnitZ())),
+                                          cnoid::Matrix3(cnoid::AngleAxisd(M_PI/2,cnoid::Vector3::UnitY())),
+                                          cnoid::Matrix3(cnoid::AngleAxisd(-M_PI/2,cnoid::Vector3::UnitY()))};
+
+
+    cnoid::BodyPtr cameraBody = new cnoid::Body();
+    {
+      cnoid::MeshGenerator meshGenerator;
+      {
+        cnoid::LinkPtr rootLink = new cnoid::Link();
+        {
+          cnoid::SgShapePtr shape = new cnoid::SgShape();
+          shape->setMesh(meshGenerator.generateBox(cnoid::Vector3(0.05,0.05,0.05)));
+          cnoid::SgMaterialPtr material = new cnoid::SgMaterial();
+          material->setTransparency(0);
+          material->setDiffuseColor(cnoid::Vector3f(0.6, 0.6, 0.6));
+          shape->setMaterial(material);
+          rootLink->addVisualShapeNode(shape);
+        }
+        {
+          cnoid::SgShapePtr shape = new cnoid::SgShape();
+          shape->setMesh(meshGenerator.generateBox(cnoid::Vector3(0.1,0.1,0.1)));
+          cnoid::SgMaterialPtr material = new cnoid::SgMaterial();
+          material->setTransparency(0);
+          material->setDiffuseColor(cnoid::Vector3f(0.6, 0.6, 0.6));
+          shape->setMaterial(material);
+          rootLink->addCollisionShapeNode(shape);
+        }
+        cameraBody->setRootLink(rootLink);
+      }
+      {
+        cnoid::RangeCameraPtr camera = new cnoid::RangeCamera();
+        camera->setName("camera");
+        camera->T_local().translation() << 0.0, 0.0, 0.0;
+        camera->T_local().linear() = cnoid::Matrix3(cnoid::AngleAxisd(-M_PI/2,cnoid::Vector3::UnitZ())*cnoid::AngleAxisd(M_PI/2,cnoid::Vector3::UnitX()));
+        camera->setFrameRate(1000);
+        camera->setFarClipDistance(200.0);
+        camera->setNearClipDistance(0.04);
+        camera->setFieldOfView(M_PI / 2);
+        camera->setResolution(200,200);
+        camera->setImageType(cnoid::Camera::COLOR_IMAGE);
+        camera->setMaxDistance(10.0);
+        camera->setMinDistance(0.04);
+        camera->setOrganized(true);
+        cameraBody->addDevice(camera, cameraBody->rootLink());
+      }
+    }
+    cameraBody->calcForwardKinematics();
+
+    cnoid::RangeCameraPtr camera = cameraBody->findDevice<cnoid::RangeCamera>("camera");
+    cnoid::LinkPtr cameraLink = cameraBody->rootLink();
+    std::shared_ptr<btConvexShape> cameraCollisionModel = choreonoid_bullet::convertToBulletModel(cameraLink->collisionShape());
+
+    for(int b=0;b<obstacles.size();b++){
+      for(int l=0;l<obstacles[b]->numLinks();l++){
+        if(collisionModels.find(obstacles[b]->link(l)) == collisionModels.end()){
+          collisionModels[obstacles[b]->link(l)] = choreonoid_bullet::convertToBulletModel(obstacles[b]->link(l)->collisionShape());
+        }
+      }
+    }
+
+    std::unique_ptr<choreonoid_viewer::Viewer> viewer = std::make_unique<choreonoid_viewer::Viewer>();
+    viewer->timeStep = 0.001;
+    viewer->objects(obstacles);
+    viewer->objects(cameraBody);
+    viewer->cameras(camera);
+    viewer->drawObjects(true);
+
+    std::cerr << "generating TSDF" << std::endl;
+
+    for(double x = param.min_x; x <= param.max_x; x+=param.step){
+      for(double y = param.min_y; y <= param.max_y; y+=param.step){
+        for(double z = param.min_z; z <= param.max_z; z+=param.step){
+          cameraBody->rootLink()->p() << x, y, z;
+          cameraBody->calcForwardKinematics();
+          bool noCollision = true;
+          for(int b=0;b<obstacles.size();b++){
+            for(int l=0;l<obstacles[b]->numLinks();l++){
+              cnoid::LinkPtr link = obstacles[b]->link(l);
+              std::shared_ptr<btConvexShape> btShape = collisionModels[link];
+
+              cnoid::Vector3 A_localp, B_localp;
+              double dist;
+              bool solved = choreonoid_bullet::computeDistance(cameraCollisionModel,
+                                                               cameraLink->p(),
+                                                               cameraLink->R(),
+                                                               btShape,
+                                                               link->p(),
+                                                               link->R(),
+                                                               dist,
+                                                               A_localp,
+                                                               B_localp
+                                                               );
+              if(solved && dist < 0.0) noCollision = false; // cameraBodyの形状が上下左右前後対称である仮定
+            }
+          }
+          if(!noCollision) continue;
+          for(int r=0;r<rotations.size();r++){
+            cameraBody->rootLink()->R() = rotations[r];
+            cameraBody->calcForwardKinematics();
+            viewer->drawObjects(true);
+            choreonoid_voxblox::insertToTsdf(camera, tsdfIntegrator, cnoid::Isometry3::Identity());
+          }
+        }
+      }
+    }
+
+    std::cerr << "generating ESDF" << std::endl;
+
+    esdfIntegrator->updateFromTsdfLayer(true);
+
+    std::cerr << "generated" << std::endl;
+
+    return true;
+  }
+
+  bool loadOrCalcEsdf(const std::string& vxblxFileName,
+                      const std::vector<cnoid::BodyPtr>& obstacles, // input
+                      std::unordered_map<cnoid::LinkPtr, std::shared_ptr<btConvexShape> >& collisionModels, // input
+                      std::shared_ptr<voxblox::TsdfMap>& tsdf_map, // output
+                      std::shared_ptr<voxblox::EsdfMap>& esdf_map, // output
+                      const calcEsdfParam& param
+                      ){
+    bool success = false;
+
+    {
+      voxblox::TsdfMap::Config tsdf_config;
+      tsdf_config.tsdf_voxel_size = param.voxel_size;
+      std::shared_ptr<voxblox::Layer<voxblox::TsdfVoxel> > tsdf_layer = std::make_shared<voxblox::Layer<voxblox::TsdfVoxel> >(tsdf_config.tsdf_voxel_size, tsdf_config.tsdf_voxels_per_side);
+      tsdf_map = std::make_shared<voxblox::TsdfMap>(tsdf_layer);
+
+      voxblox::EsdfMap::Config esdf_config;
+      esdf_config.esdf_voxel_size = tsdf_config.tsdf_voxel_size;
+      std::shared_ptr<voxblox::Layer<voxblox::EsdfVoxel> > esdf_layer = std::make_shared<voxblox::Layer<voxblox::EsdfVoxel> >(esdf_config.esdf_voxel_size, esdf_config.esdf_voxels_per_side);
+      esdf_map = std::make_shared<voxblox::EsdfMap>(esdf_layer);
+
+      success =
+        voxblox::io::LoadBlocksFromFile(vxblxFileName,
+                                        voxblox::Layer<voxblox::TsdfVoxel>::BlockMergingStrategy::kReplace,
+                                        true,
+                                        tsdf_layer.get())
+        &&
+        voxblox::io::LoadBlocksFromFile(vxblxFileName,
+                                        voxblox::Layer<voxblox::EsdfVoxel>::BlockMergingStrategy::kReplace,
+                                        true,
+                                        esdf_layer.get());
+    }
+
+    if(success) return true;
+
+    bool result = calcEsdf(obstacles,
+                           collisionModels,
+                           tsdf_map,
+                           esdf_map,
+                           param);
+    if(!result) return false;
+
+    voxblox::io::SaveLayer(*(tsdf_map->getTsdfLayerPtr()),
+                           vxblxFileName);
+    voxblox::io::SaveLayer(*(esdf_map->getEsdfLayerPtr()),
+                           vxblxFileName,
+                           false);
+    return true;
+  }
+
 
 };

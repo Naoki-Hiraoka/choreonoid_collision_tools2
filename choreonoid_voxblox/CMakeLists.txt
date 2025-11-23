@@ -6,6 +6,8 @@ set(CMAKE_BUILD_TYPE Release)
 
 find_package(catkin REQUIRED COMPONENTS
   voxblox
+  choreonoid_viewer
+  choreonoid_bullet
   )
 
 find_package(choreonoid REQUIRED)

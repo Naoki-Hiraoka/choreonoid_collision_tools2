@@ -6,3 +6,6 @@
     local-name: voxblox_installer
     uri: https://github.com/Naoki-Hiraoka/voxblox_installer.git
     version: 1.0
+- git:
+    local-name: choreonoid_viewer2
+    uri: https://github.com/Naoki-Hiraoka/choreonoid_viewer2.git
