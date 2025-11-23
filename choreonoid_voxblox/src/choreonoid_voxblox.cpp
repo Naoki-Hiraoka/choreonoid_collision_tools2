@@ -137,7 +137,7 @@ namespace choreonoid_voxblox {
 
           voxblox::Transformation trans(Eigen::Quaterniond(R_local).cast<float>(), origin_local.cast<float>()); // map frame
           voxblox::Pointcloud pcl{Eigen::Vector3f(0.0,0.0,ray)};
-          voxblox::Colors color{voxblox::Color(122,122,122)};
+          voxblox::Colors color{voxblox::Color(120,120,120)};
           tsdfIntegrator->integratePointCloud(trans, pcl, color);
         }
       }
@@ -167,6 +167,10 @@ namespace choreonoid_voxblox {
     pcl.reserve(points.size());
     color.reserve(points.size());
     for(int i=0;i<points.size();i++){
+      if(!points[i].allFinite()){
+        pixels+=3;
+        continue;
+      }
       pcl.push_back(points[i]);
       if (camera->imageType() == cnoid::Camera::COLOR_IMAGE) {
         unsigned char r = *pixels++;
@@ -174,7 +178,7 @@ namespace choreonoid_voxblox {
         unsigned char b = *pixels++;
         color.push_back(voxblox::Color(r,g,b));
       }else{
-        color.push_back(voxblox::Color(0,0,0));
+        color.push_back(voxblox::Color(120,120,120));
       }
     }
 
