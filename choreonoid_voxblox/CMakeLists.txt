@@ -18,7 +18,7 @@ find_package(choreonoid REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES choreonoid_voxblox
-  CATKIN_DEPENDS voxblox
+  CATKIN_DEPENDS voxblox choreonoid_bullet
 #  DEPENDS system_lib
 )
 

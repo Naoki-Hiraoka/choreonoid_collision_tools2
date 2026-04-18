@@ -3,6 +3,7 @@
 #include <cnoid/MeshFilter>
 #include <cnoid/MeshGenerator>
 #include <choreonoid_viewer/choreonoid_viewer.h>
+#include <choreonoid_bullet/choreonoid_bullet.h>
 
 #include <voxblox/core/tsdf_map.h>
 #include <voxblox/core/esdf_map.h>
@@ -223,7 +224,9 @@ namespace choreonoid_voxblox {
       }
     }
 
-    tsdfIntegrator->integratePointCloud(trans, pcl, color);
+    if(pcl.size() > 0){
+      tsdfIntegrator->integratePointCloud(trans, pcl, color);
+    }
 
     // esdfI2ntegrator->addNewRobotPosition(voxblox::Point(0.0, 0.0, 0.0)); // clearする.
     // esdfIntegrator->updateFromTsdfLayer(true);
