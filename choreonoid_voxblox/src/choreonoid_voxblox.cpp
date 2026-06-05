@@ -48,7 +48,7 @@ namespace choreonoid_voxblox {
     std::shared_ptr<voxblox::MeshLayer> mesh_layer = std::make_shared<voxblox::MeshLayer>(tsdf_map->block_size());
     voxblox::MeshIntegratorConfig mesh_config;
     std::shared_ptr<voxblox::MeshIntegrator<voxblox::TsdfVoxel> > meshIntegrator = std::make_shared<voxblox::MeshIntegrator<voxblox::TsdfVoxel> >(mesh_config, tsdf_map->getTsdfLayerPtr(), mesh_layer.get());
-    meshIntegrator->generateMesh(true, true);
+    meshIntegrator->generateMesh(false, false); // generateMesh(bool only_mesh_updated_blocks, bool clear_updated_flag)
 
     cnoid::BodyPtr meshBody = new cnoid::Body();
     {
