@@ -8,44 +8,6 @@
 #include <qhulleigen/qhulleigen.h>
 
 namespace choreonoid_qhull{
-  inline void addMesh(cnoid::SgMeshPtr model, std::shared_ptr<cnoid::MeshExtractor> meshExtractor){
-    cnoid::SgMeshPtr mesh = meshExtractor->currentMesh();
-    const cnoid::Affine3& T = meshExtractor->currentTransform();
-
-    const int vertexIndexTop = model->vertices()->size();
-
-    const cnoid::SgVertexArray& vertices = *mesh->vertices();
-    const int numVertices = vertices.size();
-    for(int i=0; i < numVertices; ++i){
-      const cnoid::Vector3 v = T * vertices[i].cast<cnoid::Affine3::Scalar>();
-      model->vertices()->push_back(v.cast<cnoid::Vector3f::Scalar>());
-    }
-
-    const int numTriangles = mesh->numTriangles();
-    for(int i=0; i < numTriangles; ++i){
-      cnoid::SgMesh::TriangleRef tri = mesh->triangle(i);
-      const int v0 = vertexIndexTop + tri[0];
-      const int v1 = vertexIndexTop + tri[1];
-      const int v2 = vertexIndexTop + tri[2];
-      model->addTriangle(v0, v1, v2);
-    }
-  }
-
-  inline cnoid::SgMeshPtr convertToSgMesh (const cnoid::SgNodePtr collisionshape){
-
-    if (!collisionshape) return nullptr;
-
-    std::shared_ptr<cnoid::MeshExtractor> meshExtractor = std::make_shared<cnoid::MeshExtractor>();
-    cnoid::SgMeshPtr model = new cnoid::SgMesh; model->getOrCreateVertices();
-    if(meshExtractor->extract(collisionshape, [&]() { addMesh(model,meshExtractor); })){
-    }else{
-      // mesh not found
-    }
-    model->setName(collisionshape->name());
-
-    return model;
-  }
-
   cnoid::SgNodePtr convertToConvexHull(const cnoid::SgNodePtr collisionshape) {
     if(!collisionshape) return nullptr;
     // qhull
@@ -111,9 +73,10 @@ namespace choreonoid_qhull{
 
   Eigen::Matrix<double,3,Eigen::Dynamic> meshToEigen(const cnoid::SgNodePtr collisionshape){
     if(!collisionshape) return Eigen::MatrixXd(3,0);
-    cnoid::SgMeshPtr model = convertToSgMesh(collisionshape);
+    cnoid::MeshExtractor meshExtractor;
+    cnoid::SgMeshPtr model = meshExtractor.integrate(collisionshape);
 
-    if (!model || model->vertices()->size()==0) return Eigen::MatrixXd(3,0);
+    if (!model || model->getOrCreateVertices()->size()==0) return Eigen::MatrixXd(3,0);
 
     Eigen::Matrix<double,3,Eigen::Dynamic> vertices(3,model->vertices()->size());
     for(size_t i=0;i<model->vertices()->size();i++){
