@@ -1,6 +1,7 @@
 #include <choreonoid_libigl/choreonoid_libigl.h>
 #include <mesh_boolean_libigl/mesh_boolean_libigl.h>
 #include <cnoid/MeshExtractor>
+#include <cnoid/MeshFilter>
 #include <iostream>
 
 namespace choreonoid_libigl {
@@ -50,6 +51,8 @@ namespace choreonoid_libigl {
     cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
     cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
     cnoid::SgMeshPtr mesh = booleanUnion(mesh1,mesh2);
+    cnoid::MeshFilter meshFilter;
+    meshFilter.generateNormals(mesh,0.0);
     cnoid::SgShapePtr shape(new cnoid::SgShape);
     shape->setMesh(mesh);
     return shape;
@@ -73,6 +76,8 @@ namespace choreonoid_libigl {
     cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
     cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
     cnoid::SgMeshPtr mesh = booleanIntersect(mesh1,mesh2);
+    cnoid::MeshFilter meshFilter;
+    meshFilter.generateNormals(mesh,0.0);
     cnoid::SgShapePtr shape(new cnoid::SgShape);
     shape->setMesh(mesh);
     return shape;
@@ -96,6 +101,8 @@ namespace choreonoid_libigl {
     cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
     cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
     cnoid::SgMeshPtr mesh = booleanMinus(mesh1,mesh2);
+    cnoid::MeshFilter meshFilter;
+    meshFilter.generateNormals(mesh,0.0);
     cnoid::SgShapePtr shape(new cnoid::SgShape);
     shape->setMesh(mesh);
     return shape;
@@ -119,6 +126,8 @@ namespace choreonoid_libigl {
     cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
     cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
     cnoid::SgMeshPtr mesh = booleanXor(mesh1,mesh2);
+    cnoid::MeshFilter meshFilter;
+    meshFilter.generateNormals(mesh,0.0);
     cnoid::SgShapePtr shape(new cnoid::SgShape);
     shape->setMesh(mesh);
     return shape;
