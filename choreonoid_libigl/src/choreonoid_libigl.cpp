@@ -5,8 +5,8 @@
 #include <iostream>
 
 namespace choreonoid_libigl {
-  inline bool meshToEigen(const cnoid::SgMeshPtr mesh, Eigen::MatrixXd& V, Eigen::MatrixXi& F){
-    V = Eigen::MatrixXd(3,mesh?mesh->getOrCreateVertices()->size():0); // [v1 v2 v3 v4 ..]
+  inline bool meshToEigen(const cnoid::SgMesh* mesh, Eigen::MatrixXd& V, Eigen::MatrixXi& F){
+    V = Eigen::MatrixXd(3,(mesh&&mesh->hasVertices())?mesh->vertices()->size():0); // [v1 v2 v3 v4 ..]
     F = Eigen::MatrixXi(3,mesh?mesh->numTriangles():0); // [f1 f2 f3 f4 ..]
 
     if(!mesh) return false;
@@ -46,10 +46,10 @@ namespace choreonoid_libigl {
     return eigenToMesh(V3, F3);
   }
 
-  cnoid::SgShapePtr booleanUnion(const cnoid::SgNodePtr collisionshape1, const cnoid::SgNodePtr collisionshape2) {
+  cnoid::SgShapePtr booleanUnion(cnoid::SgNode* collisionshape1, cnoid::SgNode* collisionshape2) {
     cnoid::MeshExtractor meshExtractor;
-    cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
-    cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
+    cnoid::SgMeshPtr mesh1 = collisionshape1 ? meshExtractor.integrate(collisionshape1) : nullptr;
+    cnoid::SgMeshPtr mesh2 = collisionshape2 ? meshExtractor.integrate(collisionshape2) : nullptr;
     cnoid::SgMeshPtr mesh = booleanUnion(mesh1,mesh2);
     cnoid::MeshFilter meshFilter;
     meshFilter.generateNormals(mesh,0.0);
@@ -71,10 +71,10 @@ namespace choreonoid_libigl {
     return eigenToMesh(V3, F3);
   }
 
-  cnoid::SgShapePtr booleanIntersect(const cnoid::SgNodePtr collisionshape1, const cnoid::SgNodePtr collisionshape2){
+  cnoid::SgShapePtr booleanIntersect(cnoid::SgNode* collisionshape1, cnoid::SgNode* collisionshape2){
     cnoid::MeshExtractor meshExtractor;
-    cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
-    cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
+    cnoid::SgMeshPtr mesh1 = collisionshape1 ? meshExtractor.integrate(collisionshape1) : nullptr;
+    cnoid::SgMeshPtr mesh2 = collisionshape2 ? meshExtractor.integrate(collisionshape2) : nullptr;
     cnoid::SgMeshPtr mesh = booleanIntersect(mesh1,mesh2);
     cnoid::MeshFilter meshFilter;
     meshFilter.generateNormals(mesh,0.0);
@@ -83,7 +83,7 @@ namespace choreonoid_libigl {
     return shape;
   }
 
-  cnoid::SgMeshPtr booleanMinus(const cnoid::SgMeshPtr mesh1, const cnoid::SgMeshPtr mesh2){
+  cnoid::SgMeshPtr booleanMinus(const cnoid::SgMesh* mesh1, const cnoid::SgMesh* mesh2){
     Eigen::MatrixXd V1;
     Eigen::MatrixXi F1;
     meshToEigen(mesh1, V1, F1);
@@ -96,10 +96,10 @@ namespace choreonoid_libigl {
     return eigenToMesh(V3, F3);
   }
 
-  cnoid::SgShapePtr booleanMinus(const cnoid::SgNodePtr collisionshape1, const cnoid::SgNodePtr collisionshape2){
+  cnoid::SgShapePtr booleanMinus(cnoid::SgNode* collisionshape1, cnoid::SgNode* collisionshape2){
     cnoid::MeshExtractor meshExtractor;
-    cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
-    cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
+    cnoid::SgMeshPtr mesh1 = collisionshape1 ? meshExtractor.integrate(collisionshape1) : nullptr;
+    cnoid::SgMeshPtr mesh2 = collisionshape2 ? meshExtractor.integrate(collisionshape2) : nullptr;
     cnoid::SgMeshPtr mesh = booleanMinus(mesh1,mesh2);
     cnoid::MeshFilter meshFilter;
     meshFilter.generateNormals(mesh,0.0);
@@ -121,10 +121,10 @@ namespace choreonoid_libigl {
     return eigenToMesh(V3, F3);
   }
 
-  cnoid::SgShapePtr booleanXor(const cnoid::SgNodePtr collisionshape1, const cnoid::SgNodePtr collisionshape2){
+  cnoid::SgShapePtr booleanXor(cnoid::SgNode* collisionshape1, cnoid::SgNode* collisionshape2){
     cnoid::MeshExtractor meshExtractor;
-    cnoid::SgMeshPtr mesh1 = meshExtractor.integrate(collisionshape1);
-    cnoid::SgMeshPtr mesh2 = meshExtractor.integrate(collisionshape2);
+    cnoid::SgMeshPtr mesh1 = collisionshape1 ? meshExtractor.integrate(collisionshape1) : nullptr;
+    cnoid::SgMeshPtr mesh2 = collisionshape2 ? meshExtractor.integrate(collisionshape2) : nullptr;
     cnoid::SgMeshPtr mesh = booleanXor(mesh1,mesh2);
     cnoid::MeshFilter meshFilter;
     meshFilter.generateNormals(mesh,0.0);
